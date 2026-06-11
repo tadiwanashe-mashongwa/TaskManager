@@ -63,4 +63,22 @@ public class TaskService {
         });
         return taskResponseDTOS;
     }
+    public TaskResponseDTO updateTask(Long id,TaskRequestDTO taskRequestDTO){
+        Task updatedTask=taskRepository.findById(id).orElseThrow(()->new RuntimeException("task not found"));
+        updatedTask.setTitle(taskRequestDTO.title());
+        updatedTask.setDescription(taskRequestDTO.description());
+        updatedTask.setStatus(taskRequestDTO.status());
+        updatedTask.setDueDate(taskRequestDTO.dueDate());
+        Task newTask=taskRepository.save(updatedTask);
+
+        return new TaskResponseDTO(
+                newTask.getId(),
+                newTask.getTitle(),
+                newTask.getDescription(),
+                newTask.getStatus(),
+                newTask.getDueDate(),
+                newTask.getCreatedAt(),
+                newTask.getUpdatedAt()
+        );
+    }
 }
