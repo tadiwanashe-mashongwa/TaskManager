@@ -23,7 +23,8 @@ public class Task {
     private String description;
 
     @Column(nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @Column(nullable = false)
     private Instant dueDate;
