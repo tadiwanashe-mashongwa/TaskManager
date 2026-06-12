@@ -6,6 +6,7 @@ import com.example.taskmanager.dto.TaskResponseDTO;
 import com.example.taskmanager.entity.Status;
 import com.example.taskmanager.service.TaskService;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -15,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
@@ -80,5 +82,24 @@ public class TaskControllerTest {
 
         // Verify the controller actually triggered the service layer dependency
         verify(taskService).findTaskById(id);
+    }
+
+    @Test
+    void getAllTasks_shouldReturn200AllTasksorEmptyList() throws Exception{
+        //Assert
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+       ;
+        TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
+        when(taskService.findAllTasks()).thenReturn(List.of(
+          responseDTO,responseDTO,responseDTO
+        ));
+
+        mockMvc.perform(get("/api/tasks")).
+                andExpect(status().isOk()).
+                andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].title").value("cook"))
+                .andExpect(jsonPath("$[2].description").value("cook a hot meal"));
+
+        verify(taskService).findAllTasks();
     }
 }

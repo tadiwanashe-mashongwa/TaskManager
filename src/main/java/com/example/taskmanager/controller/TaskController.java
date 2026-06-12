@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
@@ -24,5 +26,11 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id){
         TaskResponseDTO taskResponseDTO=taskService.findTaskById(id);
         return ResponseEntity.status(HttpStatus.OK).body(taskResponseDTO);
+    }
+
+    @GetMapping
+    public List<TaskResponseDTO> getAllTasks(){
+        List<TaskResponseDTO> taskResponseDTOS=taskService.findAllTasks();
+        return taskResponseDTOS;
     }
 }
