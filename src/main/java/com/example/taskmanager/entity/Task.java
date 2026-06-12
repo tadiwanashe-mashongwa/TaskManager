@@ -2,6 +2,7 @@ package com.example.taskmanager.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,7 +14,14 @@ import java.time.Instant;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+//@Builder // 💡 ADD THIS: Generates a clean builder API for flexible object creation
 public class Task {
+    public Task(String title,String description,Status status,Instant dueDate){
+        this.title=title;
+        this.description=description;
+        this.status=status;
+        this.dueDate=dueDate;
+    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

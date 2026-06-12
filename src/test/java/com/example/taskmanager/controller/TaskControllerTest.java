@@ -10,6 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,8 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -101,5 +101,40 @@ public class TaskControllerTest {
                 .andExpect(jsonPath("$[2].description").value("cook a hot meal"));
 
         verify(taskService).findAllTasks();
+    }
+
+    @Test
+    void deleteTaskById_shouldReturn200() throws Exception{
+        //Assert
+        Long id=1L;
+
+        mockMvc.perform(delete("/api/tasks/{id}",id))
+                        .andExpect(status().is2xxSuccessful());
+
+        verify(taskService).deleteTaskById(id);
+    }
+
+    @Test
+    void updateTask_shouldUpdateTaskandReturn200andNewTask() throws Exception{
+        //Assert
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+        TaskRequestDTO requestDTO = new TaskRequestDTO("cook", "cook a hot meal", Status.ACTIVE, timeMarker);
+        TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
+        Long id=1L;
+
+
+        when(taskService.updateTask(id,requestDTO)).thenReturn(responseDTO);
+
+
+        //Act and Assert
+        mockMvc.perform(put("/api/tasks/{id}",id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk()) // Asserts HTTP Status is 201 Created
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value("cook"))
+                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+
+        verify(taskService).updateTask(id,requestDTO);
     }
 }

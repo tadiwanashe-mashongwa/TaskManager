@@ -33,4 +33,17 @@ public class TaskController {
         List<TaskResponseDTO> taskResponseDTOS=taskService.findAllTasks();
         return taskResponseDTOS;
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTaskById(@PathVariable Long id) {
+        taskService.deleteTaskById(id);
+    return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable Long id,@RequestBody TaskRequestDTO taskRequestDTO){
+
+        TaskResponseDTO updatedTask=taskService.updateTask(id,taskRequestDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedTask);
+    }
 }
