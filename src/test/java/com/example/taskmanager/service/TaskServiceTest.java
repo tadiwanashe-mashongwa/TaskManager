@@ -167,5 +167,35 @@ class TaskServiceTest {
             verify(taskRepository).findById(id);
         }
 
+        @Test
+        void deleteTask_whenTaskExists(){
+            //Arrange
+            Instant dueDate = Instant.parse("2026-01-10T00:00:00Z");
+            Instant createdAt = Instant.parse("2026-01-10T00:00:00Z");
+            Instant updatedAt = Instant.parse("2026-01-10T00:00:00Z");
+            Task task =new Task(
+                    1L,
+                    "eat",
+                    "eat lasgna",
+                    Status.ACTIVE,
+                    dueDate,
+                    createdAt,
+                    updatedAt
+            );
+
+
+            Long id=1L;
+            when(taskRepository.findById(id)).thenReturn(Optional.of(
+                    task
+            ));
+
+            //Act
+            taskService.deleteTaskById(id);
+            //Assert
+
+            verify(taskRepository).deleteById(id);
+            verify(taskRepository).findById(id);
+        }
+
 
     }

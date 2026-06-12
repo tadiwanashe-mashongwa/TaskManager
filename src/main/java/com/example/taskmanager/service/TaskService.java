@@ -81,4 +81,8 @@ public class TaskService {
                 newTask.getUpdatedAt()
         );
     }
+    public void deleteTaskById(Long id){
+      Task task=taskRepository.findById(id).orElseThrow(()->new RuntimeException("Not found"));
+      taskRepository.deleteById(id);
+    }
 }
