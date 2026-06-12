@@ -1,0 +1,63 @@
+package com.example.taskmanager.controller;
+
+
+import com.example.taskmanager.dto.TaskRequestDTO;
+import com.example.taskmanager.dto.TaskResponseDTO;
+import com.example.taskmanager.entity.Status;
+import com.example.taskmanager.service.TaskService;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.Instant;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+
+
+@WebMvcTest(TaskController.class)
+public class TaskControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private TaskService taskService;
+
+    @Test
+    void creatTask_shouldReturn201AndTaskResponseDTO() throws Exception{
+
+        //Assert
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+        TaskRequestDTO requestDTO = new TaskRequestDTO("cook", "cook a hot meal", Status.ACTIVE, timeMarker);
+        TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
+
+        when(taskService.createTask(requestDTO)).thenReturn(responseDTO);
+
+        //Act and Assert
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isCreated()) // Asserts HTTP Status is 201 Created
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value("cook"))
+                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+
+        verify(taskService).createTask(any(TaskRequestDTO.class));
+
+    }
+
+}
