@@ -15,8 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+
 
 
 @WebMvcTest(TaskController.class)
@@ -60,4 +63,22 @@ public class TaskControllerTest {
 
     }
 
+    @Test
+    void findTaskById_shouldReturn200AndTaskResponseDTO () throws Exception{
+        //Assert
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+        Long id=1L;
+        TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
+
+        when(taskService.findTaskById(id)).thenReturn(responseDTO);
+
+        mockMvc.perform(get("/api/tasks/{id}", id)) // 💡 Using correct lowercase 'get' request builder
+                .andExpect(status().isOk()) // 💡 Fetching an existing task must yield an HTTP 200 OK status
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.title").value("cook"))
+                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+
+        // Verify the controller actually triggered the service layer dependency
+        verify(taskService).findTaskById(id);
+    }
 }
