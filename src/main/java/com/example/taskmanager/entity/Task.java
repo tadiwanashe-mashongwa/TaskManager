@@ -22,6 +22,7 @@ public class Task {
         this.status=status;
         this.dueDate=dueDate;
     }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
