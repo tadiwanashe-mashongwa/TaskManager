@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
@@ -122,4 +125,89 @@ class TaskRepositoryTest {
                 .containsExactlyInAnyOrder("Task 1", "Task 2", "Task 2");
 
  }
+
+ /// The Pagination Unit Test
+ @Test
+ void findByStatusWithPageable_shouldReturnPaginatedSlicesOfTasks() {
+     // 1. ARRANGE
+     Instant now = Instant.parse("2026-06-12T00:00:00Z");
+
+     Task task1 = new Task("Task 1", "Active description", Status.ACTIVE, now);
+     Task task2 = new Task("Task 2", "Another active one", Status.ACTIVE, now);
+     Task task3 = new Task("Task 3", "Third active one", Status.ACTIVE, now);
+     Task task4 = new Task("Task 4", "Done description", Status.DONE, now);
+
+     List<Task> tasks = List.of(task1, task2, task3, task4);
+     tasks.forEach(task -> entityManager.persist(task));
+     entityManager.flush();
+     entityManager.clear();
+
+     // Here is the thing: Create a request for Page 0 with a max size of 2 elements
+     Pageable pageRequest = PageRequest.of(0, 2);
+
+     // 2. ACT
+     Page<Task> taskPage = taskRepository.findByStatus(Status.ACTIVE, pageRequest);
+
+     // 3. ASSERT
+     assertThat(taskPage.getContent()).hasSize(2); // Page size cap limit enforced
+     assertThat(taskPage.getTotalElements()).as("Total matching items in DB").isEqualTo(3);
+     assertThat(taskPage.getTotalPages()).as("Total pages split calculation").isEqualTo(2);
+ }
+    @Test
+    void findByStatusWithPageableOrderByDueDate_shouldReturnPaginatedSlicesOfTasks() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-12T00:00:00Z");
+
+        Task task1 = new Task("Task 1", "Active description", Status.ACTIVE, now);
+        Task task2 = new Task("Task 2", "Another active one", Status.ACTIVE, now);
+        Task task3 = new Task("Task 3", "Third active one", Status.ACTIVE, now);
+        Task task4 = new Task("Task 4", "Done description", Status.DONE, now);
+        Task task5 = new Task("Task 1", "Active description", Status.ACTIVE, now);
+        Task task6 = new Task("Task 2", "Another active one", Status.ACTIVE, now);
+        Task task8 = new Task("Task 4", "Done description", Status.DONE, now);
+
+        List<Task> tasks = List.of(task1, task2, task3, task4,task5,task6,task8);
+        tasks.forEach(task -> entityManager.persist(task));
+        entityManager.flush();
+        entityManager.clear();
+
+        Pageable pageable=PageRequest.of(2,2);
+
+        //Act
+        Page<Task> taskPage =taskRepository.findByStatusOrderByDueDateAsc(Status.ACTIVE,pageable);
+
+        //Assert
+        assertThat(taskPage.getTotalElements()).as("Total elements should be 5 ").isEqualTo(5L);
+        assertThat(taskPage.getTotalPages()).as("Total pages is 3").isEqualTo(3);
+
+    }
+    @Test
+    void findAllWithPageable_shouldReturnPaginatedSlicesOfAllTasksRegardlessOfStatus() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-12T00:00:00Z");
+
+        // Persist a mix of statuses to prove it grabs everything across the entire table
+        Task task1 = new Task("Task 1", "Active description", Status.ACTIVE, now);
+        Task task2 = new Task("Task 2", "Another active one", Status.ACTIVE, now);
+        Task task3 = new Task("Task 3", "Third active one", Status.ACTIVE, now);
+        Task task4 = new Task("Task 4", "Done description", Status.DONE, now);
+
+        List<Task> tasks = List.of(task1, task2, task3, task4);
+        tasks.forEach(task -> entityManager.persist(task));
+        entityManager.flush();
+        entityManager.clear();
+
+        // Here is the thing: Request Page 0 with a max size of 3 elements
+        Pageable pageRequest = PageRequest.of(0, 3);
+
+        // 2. ACT
+        // Using the built-in findAll method from JpaRepository
+        Page<Task> taskPage = taskRepository.findAll(pageRequest);
+
+        // 3. ASSERT
+        assertThat(taskPage.getContent()).hasSize(3); // First slice cap limit enforced
+        assertThat(taskPage.getTotalElements()).as("Total rows in the entire table").isEqualTo(4);
+        assertThat(taskPage.getTotalPages()).as("Total pages split calculation").isEqualTo(2);
+    }
+
 }
