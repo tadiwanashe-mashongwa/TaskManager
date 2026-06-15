@@ -29,4 +29,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
    @Query(value="select t from Task t where lower(t.title) like lower(:title)",
            countQuery="select count(t) from Task t  where lower(t.title) like lower(:title)")
    Page<Task> fetchTasksByTitleContaining(@Param("title") String title,Pageable pageable);
+
+
+   //Custom native query
+   @Query(value = "select * from task t where lower(t.title) like lower(:title)",
+   countQuery = "select count(*) from task t where lower(t.title) like lower(:title)",
+   nativeQuery = true)
+   Page<Task> fetchTasksByNativeQueryTitleContaining(@Param("title") String title,Pageable pageable);
 }

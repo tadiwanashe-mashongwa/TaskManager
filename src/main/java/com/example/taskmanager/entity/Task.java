@@ -15,6 +15,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 //@Builder // 💡 ADD THIS: Generates a clean builder API for flexible object creation
+@Table(name = "Task")
 public class Task {
     public Task(String title,String description,Status status,Instant dueDate){
         this.title=title;

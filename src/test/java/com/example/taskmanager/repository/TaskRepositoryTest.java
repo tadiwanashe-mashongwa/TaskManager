@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest // 💡 Boots an isolated in-memory database and wires up repository beans
 class TaskRepositoryTest {
@@ -257,4 +259,65 @@ class TaskRepositoryTest {
 
 
     }
+    //Native query
+    @Test
+    void fetchTasksByTitleCustomNativeQuery_shouldReturnTasksUsingJPQLQuery() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
+        Task task1 = new Task("JPQL Task", "Learning query architecture", Status.ACTIVE, now);
+        Task task2 = new Task("SQL Task", "Old school query", Status.DONE, now);
+        Task task3 = new Task("JPQL Task", "Learning query architecture", Status.ACTIVE, now);
+        Task task4 = new Task("SQL Task", "Old school query", Status.DONE, now);
+
+        List<Task> tasks=List.of(task1,task2,task3,task4);
+        tasks.forEach(task->{
+            entityManager.persist(task);
+        });
+        entityManager.flush();
+        entityManager.clear();
+
+        // 2. ACT
+        Pageable pageable=PageRequest.of(0,2);
+        Page<Task> page =taskRepository.fetchTasksByNativeQueryTitleContaining("%sql%",pageable);
+
+        //Assert
+        assertThat(page.getTotalPages()).as("total pages should be 1").isEqualTo(1);
+        assertThat(page.getTotalElements()).as("total elements should be 2").isEqualTo(2);
+
+
+
+    }
+    //Constraints tests
+    @Test
+    void savingTaskWithNullTitle_ShouldThrowDataIntegrityViolationException(){
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
+        // Here is the thing: Intentionally pass 'null' into a column marked as nullable = false
+        Task corruptTask = new Task(null, "Description", Status.ACTIVE, now);
+
+        //ACT & ASSERT
+        assertThatThrownBy(()->{entityManager.persistAndFlush(corruptTask);}).isInstanceOf(Exception.class);
+
+    }
+    @Test
+    void savingTaskWithDuplicateId_shouldBeBlockedByDatabaseEngine() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
+        Task task1 = new Task("Task 1", "Description 1", Status.ACTIVE, now);
+        entityManager.persistAndFlush(task1);
+
+        // Here is the thing: Clear the persistence context memory to simulate a clean state
+        entityManager.clear();
+
+        // Attempt to force a clone task onto the exact same primary key ID slot
+        Task duplicateTask = new Task("Task 2", "Description 2", Status.ACTIVE, now);
+        duplicateTask.setId(task1.getId()); // Force duplicate primary key matching
+
+        // 2. ACT & 3. ASSERT
+        assertThatThrownBy(() -> {
+            entityManager.persist(duplicateTask);
+            entityManager.flush();
+        }).isInstanceOf(Exception.class);
+    }
+
 }
