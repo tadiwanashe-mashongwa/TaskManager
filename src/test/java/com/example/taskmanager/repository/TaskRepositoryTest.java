@@ -210,4 +210,51 @@ class TaskRepositoryTest {
         assertThat(taskPage.getTotalPages()).as("Total pages split calculation").isEqualTo(2);
     }
 
+    @Test
+    void fetchTasksByStatusCustom_shouldReturnTasksUsingJPQLQuery() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
+        Task activeTask = new Task("JPQL Task", "Learning query architecture", Status.ACTIVE, now);
+        Task doneTask = new Task("SQL Task", "Old school query", Status.DONE, now);
+
+        entityManager.persist(activeTask);
+        entityManager.persist(doneTask);
+        entityManager.flush();
+        entityManager.clear();
+
+        // 2. ACT
+        List<Task> result = taskRepository.fetchTasksByStatusCustom(Status.ACTIVE);
+
+        // 3. ASSERT
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("JPQL Task");
+    }
+
+    @Test
+    void fetchTasksByTitleCustom_shouldReturnTasksUsingJPQLQuery() {
+        // 1. ARRANGE
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
+        Task task1 = new Task("JPQL Task", "Learning query architecture", Status.ACTIVE, now);
+        Task task2 = new Task("SQL Task", "Old school query", Status.DONE, now);
+        Task task3 = new Task("JPQL Task", "Learning query architecture", Status.ACTIVE, now);
+        Task task4 = new Task("SQL Task", "Old school query", Status.DONE, now);
+
+       List<Task> tasks=List.of(task1,task2,task3,task4);
+       tasks.forEach(task->{
+           entityManager.persist(task);
+       });
+        entityManager.flush();
+        entityManager.clear();
+
+        // 2. ACT
+        Pageable pageable=PageRequest.of(0,2);
+        Page<Task> page =taskRepository.fetchTasksByTitleContaining("%sql%",pageable);
+
+        //Assert
+        assertThat(page.getTotalPages()).as("total pages should be 1").isEqualTo(1);
+        assertThat(page.getTotalElements()).as("total elements should be 2").isEqualTo(2);
+
+
+
+    }
 }
