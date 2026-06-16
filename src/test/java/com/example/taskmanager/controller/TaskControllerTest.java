@@ -33,6 +33,7 @@ import static org.mockito.Mockito.verify;
 
 @WebMvcTest(TaskController.class)
 public class TaskControllerTest {
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -43,98 +44,115 @@ public class TaskControllerTest {
     private TaskService taskService;
 
     @Test
-    void creatTask_shouldReturn201AndTaskResponseDTO() throws Exception{
-
-        //Assert
+    void creatTask_shouldReturn201AndTaskResponseDTO() throws Exception {
+        // Arrange
         Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
         TaskRequestDTO requestDTO = new TaskRequestDTO("cook", "cook a hot meal", Status.ACTIVE, timeMarker);
         TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
 
         when(taskService.createTask(requestDTO)).thenReturn(responseDTO);
 
-        //Act and Assert
+        // Act and Assert
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isCreated()) // Asserts HTTP Status is 201 Created
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.title").value("cook"))
-                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+                .andExpect(status().isCreated())
+                // 💡 UPDATED: Verifying global envelope metadata properties
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("Task created successfully"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                // 💡 UPDATED: Drilled deep into the nested $.data slot to find payload details
+                .andExpect(jsonPath("$.data.id").value(1L))
+                .andExpect(jsonPath("$.data.title").value("cook"))
+                .andExpect(jsonPath("$.data.description").value("cook a hot meal"));
 
         verify(taskService).createTask(any(TaskRequestDTO.class));
-
     }
 
     @Test
-    void findTaskById_shouldReturn200AndTaskResponseDTO () throws Exception{
-        //Assert
+    void findTaskById_shouldReturn200AndTaskResponseDTO() throws Exception {
+        // Arrange
         Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
-        Long id=1L;
+        Long id = 1L;
         TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
 
         when(taskService.findTaskById(id)).thenReturn(responseDTO);
 
-        mockMvc.perform(get("/api/tasks/{id}", id)) // 💡 Using correct lowercase 'get' request builder
-                .andExpect(status().isOk()) // 💡 Fetching an existing task must yield an HTTP 200 OK status
-                .andExpect(jsonPath("$.id").value(id))
-                .andExpect(jsonPath("$.title").value("cook"))
-                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+        // Act and Assert
+        mockMvc.perform(get("/api/tasks/{id}", id))
+                .andExpect(status().isOk())
+                // 💡 UPDATED: Verifying envelope shell properties
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("Task retrieved successfully"))
+                // 💡 UPDATED: Navigating inside the single object generic type container
+                .andExpect(jsonPath("$.data.id").value(id))
+                .andExpect(jsonPath("$.data.title").value("cook"))
+                .andExpect(jsonPath("$.data.description").value("cook a hot meal"));
 
-        // Verify the controller actually triggered the service layer dependency
         verify(taskService).findTaskById(id);
     }
 
     @Test
-    void getAllTasks_shouldReturn200AllTasksorEmptyList() throws Exception{
-        //Assert
+    void getAllTasks_shouldReturn200AllTasksorEmptyList() throws Exception {
+        // Arrange
         Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
-       ;
         TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
+
         when(taskService.findAllTasks()).thenReturn(List.of(
-          responseDTO,responseDTO,responseDTO
+                responseDTO, responseDTO, responseDTO
         ));
 
-        mockMvc.perform(get("/api/tasks")).
-                andExpect(status().isOk()).
-                andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].title").value("cook"))
-                .andExpect(jsonPath("$[2].description").value("cook a hot meal"));
+        // Act and Assert
+        mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                // 💡 UPDATED: Enforcing the corrected string message contract
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("All tasks retrieved successfully"))
+                // 💡 UPDATED: Navigating into the data payload which is now an array nested under $.data
+                .andExpect(jsonPath("$.data.length()").value(3))
+                .andExpect(jsonPath("$.data[0].title").value("cook"))
+                .andExpect(jsonPath("$.data[2].description").value("cook a hot meal"));
 
         verify(taskService).findAllTasks();
     }
 
     @Test
-    void deleteTaskById_shouldReturn200() throws Exception{
-        //Assert
-        Long id=1L;
+    void deleteTaskById_shouldReturn200() throws Exception {
+        // Arrange
+        Long id = 1L;
 
-        mockMvc.perform(delete("/api/tasks/{id}",id))
-                        .andExpect(status().is2xxSuccessful());
+        // Act and Assert
+        mockMvc.perform(delete("/api/tasks/{id}", id))
+                .andExpect(status().isOk()) // 💡 UPDATED: Enforcing 200 OK block since we return an ApiResponse
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("Task deleted successfully"))
+                .andExpect(jsonPath("$.data").isEmpty()); // 💡 Asserting that the Void payload container holds no internal elements
 
         verify(taskService).deleteTaskById(id);
     }
 
     @Test
-    void updateTask_shouldUpdateTaskandReturn200andNewTask() throws Exception{
-        //Assert
+    void updateTask_shouldUpdateTaskandReturn200andNewTask() throws Exception {
+        // Arrange
         Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
         TaskRequestDTO requestDTO = new TaskRequestDTO("cook", "cook a hot meal", Status.ACTIVE, timeMarker);
         TaskResponseDTO responseDTO = new TaskResponseDTO(1L, "cook", "cook a hot meal", Status.ACTIVE, timeMarker, timeMarker, timeMarker);
-        Long id=1L;
+        Long id = 1L;
 
+        when(taskService.updateTask(id, requestDTO)).thenReturn(responseDTO);
 
-        when(taskService.updateTask(id,requestDTO)).thenReturn(responseDTO);
-
-
-        //Act and Assert
-        mockMvc.perform(put("/api/tasks/{id}",id)
+        // Act and Assert
+        mockMvc.perform(put("/api/tasks/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isOk()) // Asserts HTTP Status is 201 Created
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.title").value("cook"))
-                .andExpect(jsonPath("$.description").value("cook a hot meal"));
+                .andExpect(status().isOk())
+                // 💡 UPDATED: Asserting the payload envelope structure for our Update transaction mapping
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("Task updated successfully"))
+                .andExpect(jsonPath("$.data.id").value(1L))
+                .andExpect(jsonPath("$.data.title").value("cook"))
+                .andExpect(jsonPath("$.data.description").value("cook a hot meal"));
 
-        verify(taskService).updateTask(id,requestDTO);
+        verify(taskService).updateTask(id, requestDTO);
     }
 }
