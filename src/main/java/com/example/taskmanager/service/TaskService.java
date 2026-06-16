@@ -5,12 +5,11 @@ import com.example.taskmanager.dto.TaskResponseDTO;
 import com.example.taskmanager.entity.Task;
 import com.example.taskmanager.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
-import org.springframework.stereotype.Service;
 
+import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor

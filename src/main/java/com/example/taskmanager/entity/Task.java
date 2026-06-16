@@ -1,17 +1,16 @@
 package com.example.taskmanager.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.FutureOrPresent;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
 @Entity
-@Data
+@Setter
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 //@Builder // 💡 ADD THIS: Generates a clean builder API for flexible object creation
@@ -39,6 +38,7 @@ public class Task {
     private Status status;
 
     @Column(nullable = false)
+    @FutureOrPresent(message = "due date should be today or in future")
     private Instant dueDate;
 
     @CreationTimestamp

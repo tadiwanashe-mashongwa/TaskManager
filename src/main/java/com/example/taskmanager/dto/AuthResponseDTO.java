@@ -1,4 +1,10 @@
 package com.example.taskmanager.dto;
 
-public record AuthResponseDTO() {
-}
+import java.time.Instant;
+
+public record AuthResponseDTO(
+        String username,
+        String email,
+        Instant createdAt
+) {
+};
