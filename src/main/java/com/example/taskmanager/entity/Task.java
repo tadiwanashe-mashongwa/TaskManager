@@ -50,6 +50,11 @@ public class Task {
     private Instant updatedAt;
 
 
+    @JoinColumn(name = "user_id",nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+
+
 
 
 }
