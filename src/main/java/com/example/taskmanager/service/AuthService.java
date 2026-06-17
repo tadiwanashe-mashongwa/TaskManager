@@ -5,6 +5,7 @@ import com.example.taskmanager.dto.AuthResponseDTO;
 import com.example.taskmanager.entity.User;
 import com.example.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,12 +15,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     public AuthResponseDTO createUser(AuthRequestDTO authRequestDTO){
         userRepository.findByEmail(authRequestDTO.email())
                 .ifPresent(existingUser -> {
                     throw new RuntimeException("User already exists");
                 });
-      User user =new User(authRequestDTO.username(),authRequestDTO.email(),authRequestDTO.password());
+      User user =new User(authRequestDTO.username(),authRequestDTO.email(),passwordEncoder.encode(authRequestDTO.password()));
 
       User savedUser=userRepository.save(user);
       return new AuthResponseDTO(
@@ -46,7 +48,7 @@ public class AuthService {
         User user=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
          user.setUsername(authRequestDTO.username());
          user.setEmail(authRequestDTO.email());
-         user.setPassword(authRequestDTO.password());
+         user.setPassword(passwordEncoder.encode(authRequestDTO.password()));
         User savedUser=userRepository.save(user);
         return new AuthResponseDTO(
                 savedUser.getId(),
@@ -70,6 +72,10 @@ public class AuthService {
         });
         return authResponseDTOList;
 
+    }
+    public void  deleteUserById(Long id){
+        User user=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+        userRepository.delete(user);
     }
 
 }

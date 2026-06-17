@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,8 +27,35 @@ public class AuthServiceTest {
     private AuthService authService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @Test
+    void hashPasswordAndcreateNewUser_ifNotExisting(){
+        //Arrange
+
+        AuthRequestDTO userRequestDTO = new AuthRequestDTO("mukundi", "example@gmail.com", "password123");
+        User user = new User(userRequestDTO.username(),userRequestDTO.email(),"hashedPassword123");
+        when(userRepository.findByEmail("example@gmail.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(userRequestDTO.password())).thenReturn("hashedPassword123");
+        user.setCreatedAt(Instant.parse("2026-06-17T08:00:00Z"));
+        user.setId(1L);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        //Act
+        AuthResponseDTO savedUser = authService.createUser(userRequestDTO);
+
+        //Assert
+        assertThat(savedUser).isNotNull();
+        assertThat(savedUser.email()).as("email should be example.com").isEqualTo("example@gmail.com");
+        assertThat(savedUser.id()).isEqualTo(1L);
+        assertThat(savedUser.createdAt()).isEqualTo(Instant.parse("2026-06-17T08:00:00Z"));
+        verify(userRepository).save(any(User.class));
+        verify(passwordEncoder).encode("password123");
+
+    }
+
+    /*@Test
     void createNewUser_ifNotExisting() {
         //Arrange
 
@@ -47,9 +75,9 @@ public class AuthServiceTest {
         assertThat(savedUser.createdAt()).isEqualTo(Instant.parse("2026-06-17T08:00:00Z"));
         verify(userRepository).save(any(User.class));
 
+    }*/
 
 
-    }
     @Test
     void findUserById_shouldReturnMatchingUser(){
         //Arrange
@@ -79,11 +107,14 @@ public class AuthServiceTest {
         User newUser=new User("marisa","example@gmail.com","password235");
         newUser.setId(1L);
         newUser.setCreatedAt(Instant.parse("2026-06-17T08:00:00Z"));
+        AuthRequestDTO authRequestDTO=new AuthRequestDTO(newUser.getUsername(),newUser.getEmail(),newUser.getPassword());
+        when(passwordEncoder.encode(authRequestDTO.password())).thenReturn("hashedPassword123");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(newUser);
 
+
         //Act
-        AuthResponseDTO updatedUser=authService.updateUser(1L,new AuthRequestDTO(newUser.getUsername(),newUser.getEmail(),newUser.getPassword()));
+        AuthResponseDTO updatedUser=authService.updateUser(1L,authRequestDTO);
 
         //Assert
         assertThat(updatedUser.email()).isEqualTo("example@gmail.com");
@@ -92,6 +123,7 @@ public class AuthServiceTest {
 
         verify(userRepository).findById(1L);
         verify(userRepository).save(any(User.class));
+        verify(passwordEncoder).encode(authRequestDTO.password());
     }
 
     @Test
@@ -120,6 +152,25 @@ public class AuthServiceTest {
         assertThat(userList.get(1).createdAt()).isEqualTo(Instant.parse("2026-06-18T08:00:00Z"));
 
         verify(userRepository).findAll();
+    }
+
+    @Test
+    void deleteUser_IfUserExists(){
+        //Assert
+        Long id=1L;
+        User user=new User("mukundi","example@gmail.com","passwprd123");
+        user.setId(id);
+        user.setCreatedAt(Instant.parse("2026-06-17T08:00:00Z"));
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+
+        //Act
+        authService.deleteUserById(id);
+
+        //Assert
+        verify(userRepository).findById(id);
+        verify(userRepository).delete(user);
+
+
     }
 
 
