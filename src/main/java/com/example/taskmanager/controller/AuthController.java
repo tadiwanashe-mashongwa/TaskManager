@@ -3,6 +3,7 @@ package com.example.taskmanager.controller;
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
 import com.example.taskmanager.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,10 @@ import java.util.List;
 public class AuthController {
     private final AuthService authService;
     @PostMapping
-    public ResponseEntity<AuthResponseDTO> createUser(@RequestBody AuthRequestDTO authRequestDTO) {
-    return  ResponseEntity.status(HttpStatus.CREATED).body(authService.createUser(authRequestDTO));
+    public ResponseEntity<?> createUser(@Valid @RequestBody AuthRequestDTO authRequestDTO) {
+         return  ResponseEntity.status(HttpStatus.CREATED).body(authService.createUser(authRequestDTO));
+
+
     }
 
     @GetMapping
@@ -27,7 +30,7 @@ public class AuthController {
         return  ResponseEntity.status(HttpStatus.OK).body(users);
     }
     @PutMapping("/{id}")
-    public ResponseEntity<AuthResponseDTO> updateTask(@PathVariable("id") Long id,@RequestBody AuthRequestDTO authRequestDTO){
+    public ResponseEntity<AuthResponseDTO> updateTask(@PathVariable("id") Long id,@Valid @RequestBody AuthRequestDTO authRequestDTO){
         return ResponseEntity.status(HttpStatus.OK).body(authService.updateUser(id,authRequestDTO));
     }
 

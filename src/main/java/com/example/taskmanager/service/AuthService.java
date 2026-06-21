@@ -3,6 +3,8 @@ package com.example.taskmanager.service;
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
 import com.example.taskmanager.entity.User;
+import com.example.taskmanager.exception.ResourceConflictException;
+import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,7 +21,7 @@ public class AuthService {
     public AuthResponseDTO createUser(AuthRequestDTO authRequestDTO){
         userRepository.findByEmail(authRequestDTO.email())
                 .ifPresent(existingUser -> {
-                    throw new RuntimeException("User already exists");
+                    throw new ResourceConflictException("User with email " + authRequestDTO.email() + " already exists");
                 });
       User user =new User(authRequestDTO.username(),authRequestDTO.email(),passwordEncoder.encode(authRequestDTO.password()));
 
@@ -34,7 +36,7 @@ public class AuthService {
 
     }
     public AuthResponseDTO findUserById(Long id){
-        User savedUser=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+        User savedUser=userRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("User with ID " + id + " not found"));
         return new AuthResponseDTO(
                 savedUser.getId(),
                 savedUser.getUsername(),
@@ -45,7 +47,7 @@ public class AuthService {
 
     }
     public AuthResponseDTO updateUser(Long id,AuthRequestDTO authRequestDTO){
-        User user=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+        User user=userRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("User with ID " + id + " not found"));
          user.setUsername(authRequestDTO.username());
          user.setEmail(authRequestDTO.email());
          user.setPassword(passwordEncoder.encode(authRequestDTO.password()));
@@ -74,7 +76,7 @@ public class AuthService {
 
     }
     public void  deleteUserById(Long id){
-        User user=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+        User user=userRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("User with ID " + id + " not found"));
         userRepository.delete(user);
     }
 
