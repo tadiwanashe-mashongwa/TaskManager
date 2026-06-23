@@ -19,4 +19,6 @@ public record AuthRequestDTO(
     @Size(min = 8)
     String password
 )
-{}
+{
+
+}

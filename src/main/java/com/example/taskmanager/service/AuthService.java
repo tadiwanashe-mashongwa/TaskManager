@@ -18,6 +18,7 @@ import java.util.List;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
     public AuthResponseDTO createUser(AuthRequestDTO authRequestDTO){
         userRepository.findByEmail(authRequestDTO.email())
                 .ifPresent(existingUser -> {
@@ -80,4 +81,12 @@ public class AuthService {
         userRepository.delete(user);
     }
 
+    public String loginUser(String email,String password){
+        User user=userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("user email: "+email+" not found"));
+         if(!passwordEncoder.matches(password,user.getPassword())){
+             throw new IllegalArgumentException("Invalid email or password credentials");
+         }
+         String token = jwtService.issueToken(email);
+         return token;
+    }
 }
