@@ -3,9 +3,9 @@ package com.example.taskmanager.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.CONFLICT)
-public class ResourceConflictException extends RuntimeException {
-    public ResourceConflictException(String message) {
+@ResponseStatus(HttpStatus.UNAUTHORIZED)
+public class BadCredentialsException extends RuntimeException {
+    public BadCredentialsException(String message) {
         super(message);
     }
 }

@@ -2,6 +2,8 @@ package com.example.taskmanager.controller;
 
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
+import com.example.taskmanager.dto.LoginRequestDTO;
+import com.example.taskmanager.dto.LoginResponseDTO;
 import com.example.taskmanager.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.Getter;
@@ -13,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
@@ -42,6 +44,12 @@ public class AuthController {
     @GetMapping("/{id}")
     public ResponseEntity<AuthResponseDTO> getUserById(@PathVariable("id") Long id){
         return ResponseEntity.status(HttpStatus.OK).body(authService.findUserById(id));
+    }
+
+    @PostMapping("/login")
+    public  ResponseEntity<LoginResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO loginRequestDTO){
+        LoginResponseDTO loginResponseDTO=authService.loginUser(loginRequestDTO.email(),loginRequestDTO.password());
+        return ResponseEntity.status(HttpStatus.OK).body(loginResponseDTO);
     }
 
 
