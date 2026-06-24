@@ -1,5 +1,6 @@
 package com.example.taskmanager.service;
 
+import com.example.taskmanager.dto.LoginResponseDTO;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -22,20 +23,22 @@ public class JwtService {
         this.secretKeyString = secretKeyString;
         this.jwtExpirationMs = jwtExpirationMs;
     }
-    public String issueToken(String email){
+    public LoginResponseDTO issueToken(String email){
         byte[] keyBytes = Decoders.BASE64URL.decode(secretKeyString);
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
 
         Instant now = Instant.now();
         Instant expiryInstant = now.plusMillis(jwtExpirationMs);
 
+
         // 2. Assemble and sign the secure compact payload string
-        return Jwts.builder()
+        String token= Jwts.builder()
                 .subject(email)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiryInstant))
                 .signWith(key)
                 .compact();
+        return new LoginResponseDTO(token,jwtExpirationMs,now);
     }
 
 }

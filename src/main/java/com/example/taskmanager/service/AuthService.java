@@ -2,7 +2,9 @@ package com.example.taskmanager.service;
 
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
+import com.example.taskmanager.dto.LoginResponseDTO;
 import com.example.taskmanager.entity.User;
+import com.example.taskmanager.exception.BadCredentialsException;
 import com.example.taskmanager.exception.ResourceConflictException;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.repository.UserRepository;
@@ -81,12 +83,16 @@ public class AuthService {
         userRepository.delete(user);
     }
 
-    public String loginUser(String email,String password){
-        User user=userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("user email: "+email+" not found"));
-         if(!passwordEncoder.matches(password,user.getPassword())){
-             throw new IllegalArgumentException("Invalid email or password credentials");
-         }
-         String token = jwtService.issueToken(email);
-         return token;
+    public LoginResponseDTO loginUser(String email, String password) {
+        // Here is the thing: We use a generic message even if the email isn't found
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password credentials"));
+
+        // Here is the thing: We throw the exact same exception if the password fails
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BadCredentialsException("Invalid email or password credentials");
+        }
+
+        return jwtService.issueToken(email);
     }
 }

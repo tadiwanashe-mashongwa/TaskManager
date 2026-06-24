@@ -1,6 +1,7 @@
 package com.example.taskmanager.exception;
 
 import com.example.taskmanager.dto.ErrorResponseDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,6 +12,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -66,5 +68,18 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBadCredentials(BadCredentialsException ex,  WebRequest webRequest) {
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                Instant.now(),
+                HttpStatus.UNAUTHORIZED.value(), // 401
+                "Unauthorized",
+                ex.getMessage(),
+                webRequest.getDescription(false).replace("uri","")
+
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 }

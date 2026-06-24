@@ -3,11 +3,10 @@ package com.example.taskmanager.service;
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
 import com.example.taskmanager.dto.LoginRequestDTO;
+import com.example.taskmanager.dto.LoginResponseDTO;
 import com.example.taskmanager.entity.User;
 import com.example.taskmanager.repository.UserRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import org.assertj.core.api.Assertions;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -183,28 +182,32 @@ public class AuthServiceTest {
     }
 
     @Test
-    void login_shouldReturnValidJWT(){
+    void login_shouldReturnValidJwtInsideLoginResponseDTOT(){
         //Act
         String email="example@gmail.com";
         String password="password123";
-        LoginRequestDTO loginRequestDTO=new LoginRequestDTO(email,password);
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+
+        LoginResponseDTO loginResponseDTO=new LoginResponseDTO(email,36000,timeMarker);
         User user=new User("mukundi",email,"hashedPassword");
         user.setId(1L);
         user.setCreatedAt(Instant.parse("2026-06-23T08:00:00Z"));
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-        when(jwtService.issueToken(email)).thenReturn("token issued");
+        when(jwtService.issueToken(email)).thenReturn(loginResponseDTO);
         when(passwordEncoder.matches(password,user.getPassword())).thenReturn(true);
 
 
         //Act
-        String token=authService.loginUser(email,password);
+        LoginResponseDTO loginResponseDTO1=authService.loginUser(email,password);
 
         //Assert
-        assertThat(token).isNotBlank();
+        assertThat(loginResponseDTO1.token()).isNotBlank();
+        assertThat(loginResponseDTO1.expirationTime()).isEqualTo(36000);
+        assertThat(loginResponseDTO1.issuedAt()).isNotNull();
 
-        verify(userRepository).findByEmail(anyString());
-        verify(jwtService).issueToken(anyString());
-        verify(passwordEncoder).matches(anyString(),anyString());
+        verify(userRepository).findByEmail(email);
+        verify(jwtService).issueToken(email);
+        verify(passwordEncoder).matches(password,user.getPassword());
 
     }
 
