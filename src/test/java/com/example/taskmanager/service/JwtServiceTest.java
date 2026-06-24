@@ -2,6 +2,7 @@ package com.example.taskmanager.service;
 
 
 
+import com.example.taskmanager.dto.LoginResponseDTO;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -14,9 +15,9 @@ import org.mockito.InjectMocks;
 
 import javax.crypto.SecretKey;
 
-import java.nio.charset.StandardCharsets;
+
 import java.time.Instant;
-import java.util.Date;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,18 +42,19 @@ public class JwtServiceTest {
     void issueToken_ShouldGenerateValidJwt_WithCorrectClaimsAndExpiration() {
         // Arrange
         String testEmail = "developer@taskmanager.com";
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
 
         // Act
-        String token =jwtService.issueToken(testEmail);
+        LoginResponseDTO loginResponseDTO =jwtService.issueToken(testEmail);
 
         //Assert
-        assertThat(token).isNotBlank();
+        assertThat(loginResponseDTO.token()).isNotBlank();
         byte[] keyBytes = Decoders.BASE64URL.decode(testSecret);
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
         Claims claims = Jwts.parser()
                 .verifyWith(key)
                 .build()
-                .parseSignedClaims(token)
+                .parseSignedClaims(loginResponseDTO.token())
                 .getPayload();
 
         assertThat(claims.getSubject()).isEqualTo(testEmail);

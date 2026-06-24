@@ -3,6 +3,7 @@ package com.example.taskmanager.exception;
 import com.example.taskmanager.controller.AuthController;
 import com.example.taskmanager.dto.AuthRequestDTO;
 
+import com.example.taskmanager.dto.LoginRequestDTO;
 import com.example.taskmanager.service.AuthService;
 import org.junit.jupiter.api.Test;
 
@@ -126,12 +127,12 @@ public class GlobalExceptionHandlerTest {
     @Test
     void handleValidationErrors_shouldReportError_whenEmailIsMalformed() throws Exception {
         // Arrange: Malformed email string
-        String invalidPayload = "{\"username\":\"mukundi\",\"email\":\"not-an-email-format\",\"password\":\"password123\"}";
-
+        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("invalid email", "password123");
         // Act & Assert
-        mockMvc.perform(post("/api/auth")
+        when(authService.loginUser(loginRequestDTO.email(),loginRequestDTO.password())).thenThrow(new IllegalArgumentException("Invalid email or password credential"));
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidPayload))
+                        .content(objectMapper.writeValueAsString(loginRequestDTO)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.validationErrors.email").exists()) // Targets email specifically
                 .andExpect(jsonPath("$.validationErrors.username").doesNotExist());
@@ -153,5 +154,30 @@ public class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.validationErrors.username").doesNotExist());
 
         verifyNoInteractions(authService);
+    }
+    @Test
+    void handleInvalidCredentuials_shouldReportErrorWhenPasswordOrEmailIsInvalid() throws Exception{
+
+        // Arrange: Missing password
+        LoginRequestDTO loginRequestDTO = new LoginRequestDTO("example@gmail.com", "wrongpassword");
+        String targetUri = "/api/auth/login";
+        when(authService.loginUser(loginRequestDTO.email(), loginRequestDTO.password()))
+                .thenThrow(new BadCredentialsException("Invalid email or password credentials"));
+
+        // Act & Assert
+        mockMvc.perform(post(targetUri)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequestDTO)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value("Invalid email or password credentials"))
+                .andExpect(jsonPath("$.path").value("="+targetUri)) // Matches your exact HttpServletRequest URI fix!
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.validationErrors").isEmpty());
+
+
+        verify(authService).loginUser(loginRequestDTO.email(), loginRequestDTO.password());
+
     }
 }

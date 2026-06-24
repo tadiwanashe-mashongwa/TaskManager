@@ -2,6 +2,8 @@ package com.example.taskmanager.controller;
 
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
+import com.example.taskmanager.dto.LoginRequestDTO;
+import com.example.taskmanager.dto.LoginResponseDTO;
 import com.example.taskmanager.entity.User;
 import com.example.taskmanager.service.AuthService;
 import com.jayway.jsonpath.JsonPath;
@@ -17,8 +19,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -135,5 +136,26 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("example@gmail.com"))
                 .andExpect(jsonPath("$.createdAt").value("2026-01-10T00:00:00Z"));
         verify(authService).findUserById(eq(id));
+    }
+    @Test
+    void login_shouldReturn200AndLoginResponse() throws Exception{
+        //Arrange
+        String email="example@gmail.com";
+        String password="password123";
+        Instant timeMarker = Instant.parse("2026-01-10T00:00:00Z");
+        LoginResponseDTO loginResponseDTO=new LoginResponseDTO("token",360000,timeMarker);
+        LoginRequestDTO loginRequestDTO=new LoginRequestDTO(email,password);
+        when(authService.loginUser(email,password)).thenReturn(loginResponseDTO);
+
+        //Act
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequestDTO))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token"))
+                .andExpect(jsonPath("$.expirationTime").value(360000))
+                .andExpect(jsonPath("$.issuedAt").value("2026-01-10T00:00:00Z"));
+        verify(authService).loginUser(email,password);
     }
     }
