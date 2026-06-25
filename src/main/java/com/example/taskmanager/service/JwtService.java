@@ -1,6 +1,7 @@
 package com.example.taskmanager.service;
 
 import com.example.taskmanager.dto.LoginResponseDTO;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -15,6 +16,19 @@ import java.util.Date;
 public class JwtService {
     private final String secretKeyString;
     private final long jwtExpirationMs;
+
+    private SecretKey getSignInKey(){
+        byte[] keyBytes = Decoders.BASE64URL.decode(secretKeyString);
+        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+        return key;
+    }
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
 
     public JwtService(
             @Value("${jwt.secret}") String secretKeyString,
@@ -39,6 +53,28 @@ public class JwtService {
                 .signWith(key)
                 .compact();
         return new LoginResponseDTO(token,jwtExpirationMs,now);
+    }
+
+
+    public boolean validateToken(String token){
+        try{
+            extractAllClaims(token);
+            return true;
+        }
+        catch(Exception e){
+            return false;
+        }
+    }
+    public String extractSubject(String token){
+        return extractAllClaims(token).getSubject();
+
+    }
+    public Date extractExpiration(String token){
+        return extractAllClaims(token).getExpiration();
+    }
+
+    public boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
     }
 
 }

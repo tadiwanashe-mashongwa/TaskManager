@@ -9,25 +9,28 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+
 
 
 
 import javax.crypto.SecretKey;
 
 
+
 import java.time.Instant;
+import java.util.Date;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 
 public class JwtServiceTest {
-    @InjectMocks
+
     private JwtService jwtService;
-    // Exact 256-bit test secret key string
-    // Replace the Hex string with a valid Base64 string:
+
     private final String testSecret = "NDBFNjNSbTY1VUpYNm4ycjV1Mzh4MkZBM0Y0NDI4NDcyQktiNFBkU2dWNms5WnA";
 
     private final long testExpirationMs = 3600000; // 1 hour in milliseconds
@@ -63,6 +66,91 @@ public class JwtServiceTest {
         long expectedExpiryTime = claims.getIssuedAt().getTime() + testExpirationMs;
         assertThat(claims.getExpiration().getTime()).isEqualTo(expectedExpiryTime);
     }
+
+    @Test
+    void shouldPassSignatureCheck_whenTokenIsAuthentic(){
+        String email="example@gmail.com";
+        LoginResponseDTO loginResponseDTO =jwtService.issueToken(email);
+
+        boolean isSignatureIntact=jwtService.validateToken(loginResponseDTO.token());
+
+        assertTrue(isSignatureIntact);
+
+    }
+    @Test
+    void validateToken_shouldReturnFalse_whenTokenIsTamperedWith() {
+        String email = "example@gmail.com";
+        LoginResponseDTO loginResponseDTO = jwtService.issueToken(email);
+
+        String token = loginResponseDTO.token();
+
+        String tamperedToken = token.substring(0, token.length() - 1) + "x";
+
+        boolean result = jwtService.validateToken(tamperedToken);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void shouldFailSignatureSheck_whenTokenForamtIsNotValid(){
+        String tamperedWithToken="not a valid token";
+        boolean isSignatureIntact=jwtService.validateToken(tamperedWithToken);
+
+        assertFalse(isSignatureIntact);
+    }
+    @Test
+    void shouldExtractCorrectSubjectFromToken_whenTokenIsValid(){
+        String expectedEmail = "mukundi@gmail.com";
+        LoginResponseDTO loginResponseDTO=jwtService.issueToken(expectedEmail);
+        String extractedEmail=jwtService.extractSubject(loginResponseDTO.token());
+
+        assertThat(extractedEmail).isEqualTo(expectedEmail);
+
+    }
+
+    @Test
+    void shouldExtractExpiration_whenTokenIsValid(){
+        String email = "mukundi@gmail.com";
+
+        LoginResponseDTO loginResponseDTO = jwtService.issueToken(email);
+
+        Date expiration = jwtService.extractExpiration(loginResponseDTO.token());
+        assertThat(expiration).isAfter(new Date());
+    }
+    @Test
+    void isTokenExpired_shouldReturnFalse_whenTokenIsNotExpired() {
+        String email = "mukundi@gmail.com";
+
+        LoginResponseDTO loginResponseDTO = jwtService.issueToken(email);
+
+        boolean result = jwtService.isTokenExpired(loginResponseDTO.token());
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void validateToken_shouldReturnFalse_whenTokenIsExpired() {
+        JwtService expiredJwtService = new JwtService(testSecret, -1000L);
+
+        LoginResponseDTO loginResponseDTO =
+                expiredJwtService.issueToken("example@gmail.com");
+
+        boolean result = jwtService.validateToken(loginResponseDTO.token());
+
+        assertThat(result).isFalse();
+    }
+
+
+    @Test
+    void validateToken_shouldReturnFalse_whenTokenWasSignedWithDifferentSecret(){
+        JwtService otherService=new JwtService( "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY",testExpirationMs);
+
+        LoginResponseDTO loginResponseDTO=otherService.issueToken("example@gmail.com");
+        boolean isValid=jwtService.validateToken(loginResponseDTO.token());
+        assertFalse(isValid);
+        System.out.println(loginResponseDTO.token());
+    }
+
 
 
 
