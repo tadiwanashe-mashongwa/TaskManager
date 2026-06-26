@@ -9,8 +9,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -89,5 +94,43 @@ public class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
 
     }
+
+    @Test
+    void doFilter_shouldAuthenticateUser_whenBearerTokenIsValid() throws Exception{
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        String token = "valid.jwt.token";
+        String email = "mukundi@gmail.com";
+
+        request.addHeader("Authorization", "Bearer " + token);
+
+        UserDetails userDetails = User
+                .withUsername(email)
+                .password("unused")
+                .authorities("ROLE_USER")
+                .build();
+
+        when(jwtService.validateToken(token)).thenReturn(true);
+        when(jwtService.extractSubject(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
+
+        SecurityContextHolder.clearContext();
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getPrincipal()).isEqualTo(userDetails);
+        assertThat(authentication.isAuthenticated()).isTrue();
+
+        verify(jwtService).validateToken(token);
+        verify(jwtService).extractSubject(token);
+        verify(userDetailsService).loadUserByUsername(email);
+        verify(filterChain).doFilter(request, response);
+    }
+
 
 }
