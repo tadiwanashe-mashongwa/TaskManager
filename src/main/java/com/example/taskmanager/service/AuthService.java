@@ -86,11 +86,11 @@ public class AuthService {
     public LoginResponseDTO loginUser(String email, String password) {
         // Here is the thing: We use a generic message even if the email isn't found
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password credentials"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         // Here is the thing: We throw the exact same exception if the password fails
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BadCredentialsException("Invalid email or password credentials");
+            throw new BadCredentialsException("Invalid  credentials");
         }
 
         return jwtService.issueToken(email);

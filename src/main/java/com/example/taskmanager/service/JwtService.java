@@ -16,6 +16,13 @@ import java.util.Date;
 public class JwtService {
     private final String secretKeyString;
     private final long jwtExpirationMs;
+    public JwtService(
+            @Value("${jwt.secret}") String secretKeyString,
+            @Value("${jwt.expiration}") long jwtExpirationMs
+    ) {
+        this.secretKeyString = secretKeyString;
+        this.jwtExpirationMs = jwtExpirationMs;
+    }
 
     private SecretKey getSignInKey(){
         byte[] keyBytes = Decoders.BASE64URL.decode(secretKeyString);
@@ -30,13 +37,7 @@ public class JwtService {
                 .getPayload();
     }
 
-    public JwtService(
-            @Value("${jwt.secret}") String secretKeyString,
-            @Value("${jwt.expiration}") long jwtExpirationMs
-    ) {
-        this.secretKeyString = secretKeyString;
-        this.jwtExpirationMs = jwtExpirationMs;
-    }
+
     public LoginResponseDTO issueToken(String email){
         byte[] keyBytes = Decoders.BASE64URL.decode(secretKeyString);
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
