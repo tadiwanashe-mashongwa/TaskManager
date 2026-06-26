@@ -2,7 +2,6 @@ package com.example.taskmanager.service;
 
 import com.example.taskmanager.dto.AuthRequestDTO;
 import com.example.taskmanager.dto.AuthResponseDTO;
-import com.example.taskmanager.dto.LoginRequestDTO;
 import com.example.taskmanager.dto.LoginResponseDTO;
 import com.example.taskmanager.entity.User;
 import com.example.taskmanager.repository.UserRepository;
@@ -20,7 +19,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
