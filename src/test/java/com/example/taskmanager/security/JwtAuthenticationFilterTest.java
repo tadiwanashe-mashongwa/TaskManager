@@ -15,7 +15,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
-import java.util.Optional;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -44,7 +44,7 @@ public class JwtAuthenticationFilterTest {
         SecurityContextHolder.clearContext();
 
         //Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
         //Assert
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -117,7 +117,7 @@ public class JwtAuthenticationFilterTest {
         when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
 
         SecurityContextHolder.clearContext();
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
